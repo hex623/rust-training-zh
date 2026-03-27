@@ -1,87 +1,87 @@
-# 讲师介绍与一般方法
+# Speaker intro and general approach
 
-> **你将学到什么：** 课程结构、互动形式，以及熟悉的 C/C++ 概念如何映射到 Rust 等价物。本章设定预期并为你提供本书的路线图。
+> **What you'll learn:** Course structure, the interactive format, and how familiar C/C++ concepts map to Rust equivalents. This chapter sets expectations and gives you a roadmap for the rest of the book.
 
-- 讲师介绍
-    - 微软 SCHIE（硅片与云硬件基础设施工程）团队的首席固件架构师
-    - 行业资深专家，拥有安全、系统编程（固件、操作系统、虚拟机监控程序）、CPU 和平台架构以及 C++ 系统方面的专业知识
-    - 自 2017 年（在 AWS EC2）开始用 Rust 编程，从此爱上了这门语言
-- 本课程旨在尽可能互动
-    - 假设：你了解 C、C++ 或两者
-    - 示例经过精心设计，将熟悉的概念映射到 Rust 等价物
-    - **请随时提出澄清问题**
-- 讲师期待与团队保持持续交流
+- Speaker intro
+    - Principal Firmware Architect in Microsoft SCHIE (Silicon and Cloud Hardware Infrastructure Engineering) team
+    - Industry veteran with expertise in security, systems programming (firmware, operating systems, hypervisors), CPU and platform architecture, and C++ systems
+    - Started programming in Rust in 2017 (@AWS EC2), and have been in love with the language ever since
+- This course is intended to be as interactive as possible
+    - Assumption: You know C, C++, or both
+    - Examples are deliberately designed to map familiar concepts to Rust equivalents
+    - **Please feel free to ask clarifying questions at any point of time**
+- Speaker is looking forward to continued engagement with teams
 
-# 为什么选择 Rust
-> **想直接看代码？** 跳转到 [给我看代码](ch02-getting-started.md#够了给我看代码)
+# The case for Rust
+> **Want to skip straight to code?** Jump to [Show me some code](ch02-getting-started.md#enough-talk-already-show-me-some-code)
 
-无论你来自 C 还是 C++，核心痛点都是一样的：内存安全 bug 能干净地编译，但在运行时崩溃、损坏或泄漏。
+Whether you're coming from C or C++, the core pain points are the same: memory safety bugs that compile cleanly but crash, corrupt, or leak at runtime.
 
-- 超过 **70% 的 CVE** 是由内存安全问题引起的 —— 缓冲区溢出、悬空指针、释放后使用
-- C++ 的 `shared_ptr`、`unique_ptr`、RAII 和移动语义是朝正确方向迈出的一步，但它们是 **创可贴，不是治愈** —— 它们留下了 use-after-move、引用循环、迭代器失效和异常安全的漏洞
-- Rust 提供你依赖的 C/C++ 性能，但具有安全性的 **编译时保证**
+- Over **70% of CVEs** are caused by memory safety issues — buffer overflows, dangling pointers, use-after-free
+- C++ `shared_ptr`, `unique_ptr`, RAII, and move semantics are steps in the right direction, but they are **bandaids, not cures** — they leave use-after-move, reference cycles, iterator invalidation, and exception safety gaps wide open
+- Rust provides the performance you rely on from C/C++, but with **compile-time guarantees** for safety
 
-> **📖 深度解析：** 参见 [为什么 C/C++ 开发者需要 Rust](ch01-1-why-c-cpp-developers-need-rust.md) 了解具体漏洞示例、Rust 消除的完整列表，以及为什么 C++ 智能指针不够用
+> **📖 Deep dive:** See [Why C/C++ Developers Need Rust](ch01-1-why-c-cpp-developers-need-rust.md) for concrete vulnerability examples, the complete list of what Rust eliminates, and why C++ smart pointers aren't enough
 
 ----
 
-# Rust 如何解决这些问题？
+# How does Rust address these issues?
 
-## 缓冲区溢出和边界违规
-- 所有 Rust 数组、切片和字符串都有明确的边界。编译器插入检查以确保任何边界违规导致 **运行时崩溃**（Rust 术语中的 panic）—— 而不是未定义行为
+## Buffer overflows and bounds violations
+- All Rust arrays, slices, and strings have explicit bounds associated with them. The compiler inserts checks to ensure that any bounds violation results in a **runtime crash** (panic in Rust terms) — never undefined behavior
 
-## 悬空指针和引用
-- Rust 引入生命周期和借用检查以在 **编译时** 消除悬空引用
-- 没有悬空指针，没有释放后使用 —— 编译器根本不允许
+## Dangling pointers and references
+- Rust introduces lifetimes and borrow checking to eliminate dangling references at **compile time**
+- No dangling pointers, no use-after-free — the compiler simply won't let you
 
 ## Use-after-move
-- Rust 的所有权系统使移动具有 **破坏性** —— 一旦移动一个值，编译器就 **拒绝** 让你使用原始值。没有僵尸对象，没有"有效但未指定状态"
+- Rust's ownership system makes moves **destructive** — once you move a value, the compiler **refuses** to let you use the original. No zombie objects, no "valid but unspecified state"
 
-## 资源管理
-- Rust 的 `Drop` trait 是正确实现的 RAII —— 编译器在超出作用域时自动释放资源，并 **防止 use-after-move**，而 C++ RAII 做不到
-- 不需要 Rule of Five（不需要定义拷贝构造、移动构造、拷贝赋值、移动赋值、析构函数）
+## Resource management
+- Rust's `Drop` trait is RAII done right — the compiler automatically frees resources when they go out of scope, and **prevents use-after-move** which C++ RAII cannot
+- No Rule of Five needed (no copy ctor, move ctor, copy assign, move assign, destructor to define)
 
-## 错误处理
-- Rust 没有异常。所有错误都是值（`Result<T, E>`），使错误处理显式并在类型签名中可见
+## Error handling
+- Rust has no exceptions. All errors are values (`Result<T, E>`), making error handling explicit and visible in the type signature
 
-## 迭代器失效
-- Rust 的借用检查器 **禁止在迭代集合时修改它**。你根本不能写出困扰 C++ 代码库的 bug：
+## Iterator invalidation
+- Rust's borrow checker **forbids modifying a collection while iterating over it**. You simply cannot write the bugs that plague C++ codebases:
 ```rust
-// Rust 中等价的 erase-during-iteration：retain()
+// Rust equivalent of erase-during-iteration: retain()
 pending_faults.retain(|f| f.id != fault_to_remove.id);
 
-// 或者：收集到新 Vec（函数式风格）
+// Or: collect into a new Vec (functional style)
 let remaining: Vec<_> = pending_faults
     .into_iter()
     .filter(|f| f.id != fault_to_remove.id)
     .collect();
 ```
 
-## 数据竞争
-- 类型系统通过 `Send` 和 `Sync` trait 在 **编译时** 防止数据竞争
+## Data races
+- The type system prevents data races at **compile time** through the `Send` and `Sync` traits
 
-## 内存安全可视化
+## Memory Safety Visualization
 
-### Rust 所有权 —— 安全设计
+### Rust Ownership — Safe by Design
 
 ```rust
 fn safe_rust_ownership() {
-    // 移动是破坏性的：原始值消失了
+    // Move is destructive: original is gone
     let data = vec![1, 2, 3];
-    let data2 = data;           // 发生移动
-    // data.len();              // 编译错误：移动后使用值
+    let data2 = data;           // Move happens
+    // data.len();              // Compile error: value used after move
     
-    // 借用：安全的共享访问
+    // Borrowing: safe shared access
     let owned = String::from("Hello, World!");
-    let slice: &str = &owned;  // 借用 —— 无分配
-    println!("{}", slice);     // 始终安全
+    let slice: &str = &owned;  // Borrow — no allocation
+    println!("{}", slice);     // Always safe
     
-    // 不可能有悬空引用
+    // No dangling references possible
     /*
     let dangling_ref;
     {
         let temp = String::from("temporary");
-        dangling_ref = &temp;  // 编译错误：temp 存活时间不够长
+        dangling_ref = &temp;  // Compile error: temp doesn't live long enough
     }
     */
 }
@@ -89,22 +89,22 @@ fn safe_rust_ownership() {
 
 ```mermaid
 graph TD
-    A[Rust 所有权安全] --> B[破坏性移动]
-    A --> C[自动内存管理]
-    A --> D[编译时生命周期检查]
-    A --> E[无异常 —— Result 类型]
+    A[Rust Ownership Safety] --> B[Destructive Moves]
+    A --> C[Automatic Memory Management]
+    A --> D[Compile-time Lifetime Checking]
+    A --> E[No Exceptions — Result Types]
     
-    B --> B1["移动后使用是编译错误"]
-    B --> B2["没有僵尸对象"]
+    B --> B1["Use-after-move is compile error"]
+    B --> B2["No zombie objects"]
     
-    C --> C1["Drop trait = 正确实现的 RAII"]
-    C --> C2["不需要 Rule of Five"]
+    C --> C1["Drop trait = RAII done right"]
+    C --> C2["No Rule of Five needed"]
     
-    D --> D1["借用检查器防止悬空"]
-    D --> D2["引用始终有效"]
+    D --> D1["Borrow checker prevents dangling"]
+    D --> D2["References always valid"]
     
-    E --> E1["Result<T,E> —— 错误在类型中"]
-    E --> E2["? 操作符用于传播"]
+    E --> E1["Result<T,E> — errors in types"]
+    E --> E2["? operator for propagation"]
     
     style A fill:#51cf66,color:#000
     style B fill:#91e5a3,color:#000
@@ -113,64 +113,64 @@ graph TD
     style E fill:#91e5a3,color:#000
 ```
 
-## 内存布局：Rust 引用
+## Memory Layout: Rust References
 
 ```mermaid
 graph TD
-    RM1[栈] --> RP1["&i32 引用"]
-    RM2[栈/堆] --> RV1["i32 值 = 42"]
-    RP1 -.->|"安全引用 —— 生命周期检查"| RV1
-    RM3[借用检查器] --> RC1["在编译时防止悬空引用"]
+    RM1[Stack] --> RP1["&i32 ref"]
+    RM2[Stack/Heap] --> RV1["i32 value = 42"]
+    RP1 -.->|"Safe reference — Lifetime checked"| RV1
+    RM3[Borrow Checker] --> RC1["Prevents dangling refs at compile time"]
     
     style RC1 fill:#51cf66,color:#000
     style RP1 fill:#91e5a3,color:#000
 ```
 
-### `Box<T>` 堆分配可视化
+### `Box<T>` Heap Allocation Visualization
 
 ```rust
 fn box_allocation_example() {
-    // 栈分配
+    // Stack allocation
     let stack_value = 42;
     
-    // 使用 Box 进行堆分配
+    // Heap allocation with Box
     let heap_value = Box::new(42);
     
-    // 移动所有权
+    // Moving ownership
     let moved_box = heap_value;
-    // heap_value 不再可访问
+    // heap_value is no longer accessible
 }
 ```
 
 ```mermaid
 graph TD
-    subgraph "栈帧"
+    subgraph "Stack Frame"
         SV["stack_value: 42"]
         BP["heap_value: Box<i32>"]
         BP2["moved_box: Box<i32>"]
     end
     
-    subgraph "堆"
+    subgraph "Heap"
         HV["42"]
     end
     
-    BP -->|"拥有"| HV
-    BP -.->|"移动所有权"| BP2
-    BP2 -->|"现在拥有"| HV
+    BP -->|"Owns"| HV
+    BP -.->|"Move ownership"| BP2
+    BP2 -->|"Now owns"| HV
     
-    subgraph "移动后"
-        BP_X["heap_value: [警告] 已移动"]
+    subgraph "After Move"
+        BP_X["heap_value: [WARNING] MOVED"]
         BP2_A["moved_box: Box<i32>"]
     end
     
-    BP2_A -->|"拥有"| HV
+    BP2_A -->|"Owns"| HV
     
     style BP_X fill:#ff6b6b,color:#000
     style HV fill:#91e5a3,color:#000
     style BP2_A fill:#51cf66,color:#000
 ```
 
-## 切片操作可视化
+## Slice Operations Visualization
 
 ```rust
 fn slice_operations() {
@@ -186,7 +186,7 @@ fn slice_operations() {
 ```mermaid
 graph TD
     V["Vec: [1, 2, 3, 4, 5, 6, 7, 8]"]
-    V --> FS["&data[..] → 所有元素"]
+    V --> FS["&data[..] → all elements"]
     V --> PS["&data[2..6] → [3, 4, 5, 6]"]
     V --> SS["&data[..4] → [1, 2, 3, 4]"]
     V --> ES["&data[3..] → [4, 5, 6, 7, 8]"]
@@ -198,34 +198,34 @@ graph TD
     style ES fill:#91e5a3,color:#000
 ```
 
-# Rust 的其他独特卖点和特性
-- 线程之间没有数据竞争（编译时 `Send`/`Sync` 检查）
-- 没有 use-after-move（不像 C++ `std::move` 会留下僵尸对象）
-- 没有未初始化的变量
-    - 所有变量必须在使用前初始化
-- 没有简单的内存泄漏
-    - `Drop` trait = 正确实现的 RAII，不需要 Rule of Five
-    - 编译器在超出作用域时自动释放内存
-- 没有忘记解锁的互斥锁
-    - 锁守卫是访问数据的 *唯一* 方式（`Mutex<T>` 包装数据，而不是访问）
-- 没有异常处理的复杂性
-    - 错误是值（`Result<T, E>`），在函数签名中可见，用 `?` 传播
-- 对类型推导、枚举、模式匹配、零成本抽象的优秀支持
-- 内置依赖管理、构建、测试、格式化、linting 支持
-    - `cargo` 替代 make/CMake + lint + 测试框架
+# Other Rust USPs and features
+- No data races between threads (compile-time `Send`/`Sync` checking)
+- No use-after-move (unlike C++ `std::move` which leaves zombie objects)
+- No uninitialized variables
+    - All variables must be initialized before use
+- No trivial memory leaks
+    - `Drop` trait = RAII done right, no Rule of Five needed
+    - Compiler automatically releases memory when it goes out of scope
+- No forgotten locks on mutexes
+    - Lock guards are the *only* way to access the data (`Mutex<T>` wraps the data, not the access)
+- No exception handling complexity
+    - Errors are values (`Result<T, E>`), visible in function signatures, propagated with `?`
+- Excellent support for type inference, enums, pattern matching, zero cost abstractions
+- Built-in support for dependency management, building, testing, formatting, linting
+    - `cargo` replaces make/CMake + lint + test frameworks
 
-# 快速参考：Rust vs C/C++
+# Quick Reference: Rust vs C/C++
 
-| **概念** | **C** | **C++** | **Rust** | **关键区别** |
+| **Concept** | **C** | **C++** | **Rust** | **Key Difference** |
 |-------------|-------|---------|----------|-------------------|
-| 内存管理 | `malloc()/free()` | `unique_ptr`, `shared_ptr` | `Box<T>`, `Rc<T>`, `Arc<T>` | 自动，无循环 |
-| 数组 | `int arr[10]` | `std::vector<T>`, `std::array<T>` | `Vec<T>`, `[T; N]` | 默认边界检查 |
-| 字符串 | `char*` 带 `\0` | `std::string`, `string_view` | `String`, `&str` | 保证 UTF-8，生命周期检查 |
-| 引用 | `int* ptr` | `T&`, `T&&` (移动) | `&T`, `&mut T` | 借用检查，生命周期 |
-| 多态 | 函数指针 | 虚函数、继承 | Trait、trait 对象 | 组合优于继承 |
-| 泛型编程 | 宏 (`void*`) | 模板 | 泛型 + trait bounds | 更好的错误信息 |
-| 错误处理 | 返回码，`errno` | 异常，`std::optional` | `Result<T, E>`, `Option<T>` | 无隐藏控制流 |
-| NULL/空安全 | `ptr == NULL` | `nullptr`, `std::optional<T>` | `Option<T>` | 强制空检查 |
-| 线程安全 | 手动 (pthreads) | 手动同步 | 编译时保证 | 数据竞争不可能 |
-| 构建系统 | Make, CMake | CMake, Make 等 | Cargo | 集成工具链 |
-| 未定义行为 | 运行时崩溃 | 微妙的 UB（有符号溢出、别名） | 编译时错误 | 安全保证 |
+| Memory management | `malloc()/free()` | `unique_ptr`, `shared_ptr` | `Box<T>`, `Rc<T>`, `Arc<T>` | Automatic, no cycles |
+| Arrays | `int arr[10]` | `std::vector<T>`, `std::array<T>` | `Vec<T>`, `[T; N]` | Bounds checking by default |
+| Strings | `char*` with `\0` | `std::string`, `string_view` | `String`, `&str` | UTF-8 guaranteed, lifetime-checked |
+| References | `int* ptr` | `T&`, `T&&` (move) | `&T`, `&mut T` | Borrow checking, lifetimes |
+| Polymorphism | Function pointers | Virtual functions, inheritance | Traits, trait objects | Composition over inheritance |
+| Generic programming | Macros (`void*`) | Templates | Generics + trait bounds | Better error messages |
+| Error handling | Return codes, `errno` | Exceptions, `std::optional` | `Result<T, E>`, `Option<T>` | No hidden control flow |
+| NULL/null safety | `ptr == NULL` | `nullptr`, `std::optional<T>` | `Option<T>` | Forced null checking |
+| Thread safety | Manual (pthreads) | Manual synchronization | Compile-time guarantees | Data races impossible |
+| Build system | Make, CMake | CMake, Make, etc. | Cargo | Integrated toolchain |
+| Undefined behavior | Runtime crashes | Subtle UB (signed overflow, aliasing) | Compile-time errors | Safety guaranteed |

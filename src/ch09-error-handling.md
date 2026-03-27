@@ -1,58 +1,58 @@
-## 将枚举连接到 Option 和 Result
+## Connecting enums to Option and Result
 
-> **你将学到什么：** Rust 如何用 `Option<T>` 替代空指针，用 `Result<T, E>` 替代异常，以及 `?` 操作符如何使错误传播简洁。这是 Rust 最独特的模式 —— 错误是值，不是隐藏的控制流。
+> **What you'll learn:** How Rust replaces null pointers with `Option<T>` and exceptions with `Result<T, E>`, and how the `?` operator makes error propagation concise. This is Rust's most distinctive pattern — errors are values, not hidden control flow.
 
-- 记得我们之前学过的 `enum` 类型吗？Rust 的 `Option` 和 `Result` 只是标准库中定义的枚举：
+- Remember the `enum` type we learned earlier? Rust's `Option` and `Result` are simply enums defined in the standard library:
 ```rust
-// 这就是 Option 在 std 中的实际定义方式：
+// This is literally how Option is defined in std:
 enum Option<T> {
-    Some(T),  // 包含值
-    None,     // 无值
+    Some(T),  // Contains a value
+    None,     // No value
 }
 
-// 还有 Result：
+// And Result:
 enum Result<T, E> {
-    Ok(T),    // 成功并带值
-    Err(E),   // 错误并带详情
+    Ok(T),    // Success with value
+    Err(E),   // Error with details
 }
 ```
-- 这意味着你学到的关于 `match` 模式匹配的所有知识都直接适用于 `Option` 和 `Result`
-- Rust 中 **没有空指针** —— `Option<T>` 是其替代品，编译器强制你处理 `None` 情况
+- This means everything you learned about pattern matching with `match` works directly with `Option` and `Result`
+- There is **no null pointer** in Rust -- `Option<T>` is the replacement, and the compiler forces you to handle the `None` case
 
-### C++ 对比：异常 vs Result
-| **C++ 模式** | **Rust 等效** | **优势** |
+### C++ Comparison: Exceptions vs Result
+| **C++ Pattern** | **Rust Equivalent** | **Advantage** |
 |----------------|--------------------|--------------|
-| `throw std::runtime_error(msg)` | `Err(MyError::Runtime(msg))` | 错误在返回类型中 —— 不能忘记处理 |
-| `try { } catch (...) { }` | `match result { Ok(v) => ..., Err(e) => ... }` | 无隐藏控制流 |
-| `std::optional<T>` | `Option<T>` | 需要穷尽匹配 —— 不能忘记 None |
-| `noexcept` 注解 | 默认 —— 所有 Rust 函数都是 "noexcept" | 异常不存在 |
-| `errno` / 返回码 | `Result<T, E>` | 类型安全，不能忽略 |
+| `throw std::runtime_error(msg)` | `Err(MyError::Runtime(msg))` | Error in return type — can't forget to handle |
+| `try { } catch (...) { }` | `match result { Ok(v) => ..., Err(e) => ... }` | No hidden control flow |
+| `std::optional<T>` | `Option<T>` | Exhaustive match required — can't forget None |
+| `noexcept` annotation | Default — all Rust functions are "noexcept" | Exceptions don't exist |
+| `errno` / return codes | `Result<T, E>` | Type-safe, can't ignore |
 
-# Rust Option 类型
-- Rust `Option` 类型是一个只有两种变体的 `enum`：`Some<T>` 和 `None`
-    - 这个想法是它代表一个 `nullable` 类型，即它要么包含该类型的有效值（`Some<T>`），要么没有有效值（`None`）
-    - 当 API 操作结果要么成功并返回有效值，要么失败（但具体错误无关紧要）时，使用 `Option` 类型。例如，考虑解析字符串中的整数值
+# Rust Option type
+- The Rust ```Option``` type is an ```enum``` with only two variants: ```Some<T>``` and ```None```
+    - The idea is that this represents a ```nullable``` type, i.e., it either contains a valid value of that type (```Some<T>```), or has no valid value (```None```)
+    - The ```Option``` type is used in APIs result of an operation either succeeds and returns a valid value or it fails (but the specific error is irrelevant). For example, consider parsing a string for an integer value
 ```rust
 fn main() {
-    // 返回 Option<usize>
+    // Returns Option<usize>
     let a = "1234".find("1");
     match a {
-        Some(a) => println!("在索引 {a} 处找到 1"),
-        None => println!("找不到 1")
+        Some(a) => println!("Found 1 at index {a}"),
+        None => println!("Couldn't find 1")
     }
 }
 ```
 
-# Rust Option 类型
-- Rust `Option` 可以用各种方式处理
-    - `unwrap()` 如果 `Option<T>` 是 `None` 则 panic，否则返回 `T`，这是最不推荐的方法
-    - `or()` 可用于返回替代值
-    - `if let` 让我们测试 `Some<T>`
+# Rust Option type
+- Rust ```Option``` can be processed in various ways
+    - ```unwrap()``` panics if the ```Option<T>``` is ```None``` and returns ```T``` otherwise and it is the least preferred approach 
+    - ```or()``` can be used to return an alternative value 
+    ```if let``` lets us test for ```Some<T>```
 
-> **生产模式**：参见 [使用 unwrap_or 的安全值提取](ch17-2-avoiding-unchecked-indexing.md#safe-value-extraction-with-unwrap_or) 和 [函数式转换：map、map_err、find_map](ch17-2-avoiding-unchecked-indexing.md#functional-transforms-map-map_err-find_map) 了解生产 Rust 代码中的真实示例。
+> **Production patterns**: See [Safe value extraction with unwrap_or](ch17-2-avoiding-unchecked-indexing.md#safe-value-extraction-with-unwrap_or) and [Functional transforms: map, map_err, find_map](ch17-2-avoiding-unchecked-indexing.md#functional-transforms-map-map_err-find_map) for real-world examples from production Rust code.
 ```rust
 fn main() {
-  // 返回 Option<usize>
+  // This return an Option<usize>
   let a = "1234".find("1");
   println!("{a:?} {}", a.unwrap());
   let a = "1234".find("5").or(Some(42));
@@ -60,44 +60,44 @@ fn main() {
   if let Some(a) = "1234".find("1") {
       println!("{a}");
   } else {
-    println!("字符串中未找到");
+    println!("Not found in string");
   }
-  // 这会 panic
+  // This will panic
   // "1234".find("5").unwrap();
 }
 ```
 
-# Rust Result 类型
-- Result 是一个类似于 `Option` 的 `enum` 类型，有两个变体：`Ok<T>` 或 `Err<E>`
-    - `Result` 在可能失败的 Rust API 中广泛使用。想法是成功时函数返回 `Ok<T>`，失败时返回特定错误 `Err<T>`
+# Rust Result type
+- Result is an ```enum``` type similar to ```Option``` with two variants: ```Ok<T>``` or ```Err<E>```
+    - ```Result``` is used extensively in Rust APIs that can fail. The idea is that on success, functions will return a ```Ok<T>```, or they will return a specific error ```Err<T>```
 ```rust
   use std::num::ParseIntError;
   fn main() {
   let a : Result<i32, ParseIntError>  = "1234z".parse();
   match a {
-      Ok(n) => println!("解析数字 {n}"),
-      Err(e) => println!("解析失败 {e:?}"),
+      Ok(n) => println!("Parsed {n}"),
+      Err(e) => println!("Parsing failed {e:?}"),
   }
   let a : Result<i32, ParseIntError>  = "1234z".parse().or(Ok(-1));
   println!("{a:?}");
   if let Ok(a) = "1234".parse::<i32>() {
     println!("Let OK {a}");  
   }
-  // 这会 panic
+  // This will panic
   //"1234z".parse().unwrap();
 }
 ```
 
-## Option 和 Result：同一枚硬币的两面
+## Option and Result: Two Sides of the Same Coin
 
-`Option` 和 `Result` 密切相关 —— `Option<T>` 本质上是 `Result<T, ()>`（错误不携带信息的结果）：
+`Option` and `Result` are deeply related — `Option<T>` is essentially `Result<T, ()>` (a result where the error carries no information):
 
-| `Option<T>` | `Result<T, E>` | 含义 |
+| `Option<T>` | `Result<T, E>` | Meaning |
 |-------------|---------------|---------|
-| `Some(value)` | `Ok(value)` | 成功 —— 值存在 |
-| `None` | `Err(error)` | 失败 —— 无值（Option）或错误详情（Result） |
+| `Some(value)` | `Ok(value)` | Success — value is present |
+| `None` | `Err(error)` | Failure — no value (Option) or error details (Result) |
 
-**它们之间的转换：**
+**Converting between them:**
 
 ```rust
 fn main() {
@@ -105,23 +105,23 @@ fn main() {
     let res: Result<i32, &str> = opt.ok_or("value was None");  // Option → Result
     
     let res: Result<i32, &str> = Ok(42);
-    let opt: Option<i32> = res.ok();  // Result → Option（丢弃错误）
+    let opt: Option<i32> = res.ok();  // Result → Option (discards error)
     
-    // 它们共享许多相同方法：
+    // They share many of the same methods:
     // .map(), .and_then(), .unwrap_or(), .unwrap_or_else(), .is_some()/is_ok()
 }
 ```
 
-> **经验法则**：当缺失是正常的（例如，查找键）时使用 `Option`。当失败需要解释（例如，文件 I/O、解析）时使用 `Result`。
+> **Rule of thumb**: Use `Option` when absence is normal (e.g., looking up a key). Use `Result` when failure needs explanation (e.g., file I/O, parsing).
 
-# 练习：使用 Option 实现 log() 函数
+# Exercise: log() function implementation with Option
 
-🟢 **入门**
+🟢 **Starter**
 
-- 实现一个 `log()` 函数，接受 `Option<&str>` 参数。如果参数是 `None`，它应该打印默认字符串
-- 函数应该返回一个 `Result`，成功和错误类型都是 `()`（在这种情况下我们永远不会有错误）
+- Implement a ```log()``` function that accepts an ```Option<&str>``` parameter. If the parameter is ```None```, it should print a default string
+- The function should return a ```Result``` with ```()``` for both success and error (in this case we'll never have an error)
 
-<details><summary>解答（点击展开）</summary>
+<details><summary>Solution (click to expand)</summary>
 
 ```rust
 fn log(message: Option<&str>) -> Result<(), ()> {
@@ -136,11 +136,11 @@ fn main() {
     let _ = log(Some("System initialized"));
     let _ = log(None);
     
-    // 使用 unwrap_or 的替代方案：
+    // Alternative using unwrap_or:
     let msg: Option<&str> = None;
     println!("LOG: {}", msg.unwrap_or("(default message)"));
 }
-// 输出：
+// Output:
 // LOG: System initialized
 // LOG: (no message provided)
 // LOG: (default message)
@@ -149,29 +149,29 @@ fn main() {
 </details>
 
 ----
-# Rust 错误处理
- - Rust 错误可以是不可恢复的（致命）或可恢复的。致命错误导致 `panic`
-    - 一般来说，导致 `panics` 的情况应该避免。`panics` 由程序中的 bug 引起，包括超出索引边界、在 `Option<None>` 上调用 `unwrap()` 等。
-    - 对于应该不可能的条件，显式 `panics` 是可以的。`panic!` 或 `assert!` 宏可用于健全性检查
+# Rust error handling
+ - Rust errors can be irrecoverable (fatal) or recoverable. Fatal errors result in a ``panic```
+    - In general, situation that result in ```panics``` should be avoided. ```panics``` are caused by bugs in the program, including exceeding index bounds, calling ```unwrap()``` on an ```Option<None>```, etc.
+    - It is OK to have explicit ```panics``` for conditions that should be impossible. The ```panic!``` or ```assert!``` macros can be used for sanity checks
 ```rust
 fn main() {
    let x : Option<u32> = None;
-   // println!("{x}", x.unwrap()); // 会 panic
-   println!("{}", x.unwrap_or(0));  // 正常 -- 打印 0
+   // println!("{x}", x.unwrap()); // Will panic
+   println!("{}", x.unwrap_or(0));  // OK -- prints 0
    let x = 41;
-   //assert!(x == 42); // 会 panic
-   //panic!("Something went wrong"); // 无条件 panic
+   //assert!(x == 42); // Will panic
+   //panic!("Something went wrong"); // Unconditional panic
    let _a = vec![0, 1];
-   // println!("{}", a[2]); // 越界 panic；使用 a.get(2) 返回 Option<T>
+   // println!("{}", a[2]); // Out of bounds panic; use a.get(2) which will return Option<T>
 }
 ```
 
-## 错误处理：C++ vs Rust
+## Error Handling: C++ vs Rust
 
-### C++ 基于异常的错误处理问题
+### C++ Exception-Based Error Handling Problems
 
 ```cpp
-// C++ 错误处理 - 异常创建隐藏控制流
+// C++ error handling - exceptions create hidden control flow
 #include <fstream>
 #include <stdexcept>
 
@@ -181,30 +181,30 @@ std::string read_config(const std::string& path) {
         throw std::runtime_error("Cannot open: " + path);
     }
     std::string content;
-    // 如果 getline 抛出怎么办？文件是否正确关闭？
-    // 有 RAII 可以，但其他资源呢？
+    // What if getline throws? Is file properly closed?
+    // With RAII yes, but what about other resources?
     std::getline(file, content);
-    return content;  // 如果调用者没有 try/catch 怎么办？
+    return content;  // What if caller doesn't try/catch?
 }
 
 int main() {
-    // 错误：忘记用 try/catch 包装！
+    // ERROR: Forgot to wrap in try/catch!
     auto config = read_config("nonexistent.txt");
-    // 异常静默传播，程序崩溃
-    // 函数签名中没有警告我们
+    // Exception propagates silently, program crashes
+    // Nothing in the function signature warned us
     return 0;
 }
 ```
 
 ```mermaid
 graph TD
-    subgraph "C++ 错误处理问题"
-        CF["函数调用"]
-        CR["抛出异常<br/>或返回码"]
-        CIGNORE["[错误] 异常未捕获<br/>或返回码被忽略"]
-        CCHECK["try/catch 或检查"]
-        CERROR["隐藏控制流<br/>签名中没有抛出"]
-        CERRNO["没有编译时<br/>强制执行"]
+    subgraph "C++ Error Handling Issues"
+        CF["Function Call"]
+        CR["throw exception<br/>or return code"]
+        CIGNORE["[ERROR] Exception not caught<br/>or return code ignored"]
+        CCHECK["try/catch or check"]
+        CERROR["Hidden control flow<br/>throws not in signature"]
+        CERRNO["No compile-time<br/>enforcement"]
         
         CF --> CR
         CR --> CIGNORE
@@ -212,16 +212,16 @@ graph TD
         CCHECK --> CERROR
         CERROR --> CERRNO
         
-        CPROBLEMS["[错误] 异常在类型中不可见<br/>[错误] 隐藏控制流<br/>[错误] 容易忘记 try/catch<br/>[错误] 异常安全很难<br/>[错误] noexcept 是可选的"]
+        CPROBLEMS["[ERROR] Exceptions invisible in types<br/>[ERROR] Hidden control flow<br/>[ERROR] Easy to forget try/catch<br/>[ERROR] Exception safety is hard<br/>[ERROR] noexcept is opt-in"]
     end
     
-    subgraph "Rust Result<T, E> 系统"
-        RF["函数调用"]
+    subgraph "Rust Result<T, E> System"
+        RF["Function Call"]
         RR["Result<T, E><br/>Ok(value) | Err(error)"]
-        RMUST["[正常] 必须处理<br/>忽略则编译错误"]
-        RMATCH["模式匹配<br/>match, if let, ?"]
-        RDETAIL["详细错误信息<br/>自定义错误类型"]
-        RSAFE["类型安全<br/>无全局状态"]
+        RMUST["[OK] Must handle<br/>Compile error if ignored"]
+        RMATCH["Pattern matching<br/>match, if let, ?"]
+        RDETAIL["Detailed error info<br/>Custom error types"]
+        RSAFE["Type-safe<br/>No global state"]
         
         RF --> RR
         RR --> RMUST
@@ -229,7 +229,7 @@ graph TD
         RMATCH --> RDETAIL
         RDETAIL --> RSAFE
         
-        RBENEFITS["[正常] 强制错误处理<br/>[正常] 类型安全错误<br/>[正常] 详细错误信息<br/>[正常] 与 ? 可组合<br/>[正常] 零运行时开销"]
+        RBENEFITS["[OK] Forced error handling<br/>[OK] Type-safe errors<br/>[OK] Detailed error info<br/>[OK] Composable with ?<br/>[OK] Zero runtime cost"]
     end
     
     style CPROBLEMS fill:#ff6b6b,color:#000
@@ -238,37 +238,37 @@ graph TD
     style RMUST fill:#91e5a3,color:#000
 ```
 
-### `Result<T, E>` 可视化
+### `Result<T, E>` Visualization
 
 ```rust
-// Rust 错误处理 - 全面且强制
+// Rust error handling - comprehensive and forced
 use std::fs::File;
 use std::io::Read;
 
 fn read_file_content(filename: &str) -> Result<String, std::io::Error> {
-    let mut file = File::open(filename)?;  // ? 自动传播错误
+    let mut file = File::open(filename)?;  // ? automatically propagates errors
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    Ok(contents)  // 成功情况
+    Ok(contents)  // Success case
 }
 
 fn main() {
     match read_file_content("example.txt") {
-        Ok(content) => println!("文件内容: {}", content),
-        Err(error) => println!("读取文件失败: {}", error),
-        // 编译器强制我们处理两种情况！
+        Ok(content) => println!("File content: {}", content),
+        Err(error) => println!("Failed to read file: {}", error),
+        // Compiler forces us to handle both cases!
     }
 }
 ```
 
 ```mermaid
 graph TD
-    subgraph "Result<T, E> 流程"
-        START["函数开始"]
+    subgraph "Result<T, E> Flow"
+        START["Function starts"]
         OP1["File::open()"]
-        CHECK1{{"Result 检查"}}
+        CHECK1{{"Result check"}}
         OP2["file.read_to_string()"]
-        CHECK2{{"Result 检查"}}
+        CHECK2{{"Result check"}}
         SUCCESS["Ok(contents)"]
         ERROR1["Err(io::Error)"]
         ERROR2["Err(io::Error)"]
@@ -281,25 +281,25 @@ graph TD
         CHECK2 -->|"Ok(())"| SUCCESS
         CHECK2 -->|"Err(e)"| ERROR2
         
-        ERROR1 --> PROPAGATE["? 操作符<br/>传播错误"]
+        ERROR1 --> PROPAGATE["? operator<br/>propagates error"]
         ERROR2 --> PROPAGATE
-        PROPAGATE --> CALLER["调用者必须<br/>处理错误"]
+        PROPAGATE --> CALLER["Caller must<br/>handle error"]
     end
     
-    subgraph "模式匹配选项"
+    subgraph "Pattern Matching Options"
         MATCH["match result"]
         IFLET["if let Ok(val) = result"]
-        UNWRAP["result.unwrap()<br/>[警告] 错误时 panic"]
-        EXPECT["result.expect(msg)<br/>[警告] 带消息 panic"]
-        UNWRAP_OR["result.unwrap_or(default)<br/>[正常] 安全回退"]
-        QUESTION["result?<br/>[正常] 提前返回"]
+        UNWRAP["result.unwrap()<br/>[WARNING] Panics on error"]
+        EXPECT["result.expect(msg)<br/>[WARNING] Panics with message"]
+        UNWRAP_OR["result.unwrap_or(default)<br/>[OK] Safe fallback"]
+        QUESTION["result?<br/>[OK] Early return"]
         
-        MATCH --> SAFE1["[正常] 处理两种情况"]
-        IFLET --> SAFE2["[正常] 处理错误情况"]
-        UNWRAP_OR --> SAFE3["[正常] 始终返回值"]
-        QUESTION --> SAFE4["[正常] 传播给调用者"]
-        UNWRAP --> UNSAFE1["[错误] 可能 panic"]
-        EXPECT --> UNSAFE2["[错误] 可能 panic"]
+        MATCH --> SAFE1["[OK] Handles both cases"]
+        IFLET --> SAFE2["[OK] Handles error case"]
+        UNWRAP_OR --> SAFE3["[OK] Always returns value"]
+        QUESTION --> SAFE4["[OK] Propagates to caller"]
+        UNWRAP --> UNSAFE1["[ERROR] Can panic"]
+        EXPECT --> UNSAFE2["[ERROR] Can panic"]
     end
     
     style SUCCESS fill:#91e5a3,color:#000
@@ -313,33 +313,33 @@ graph TD
     style UNSAFE2 fill:#ff6b6b,color:#000
 ```
 
-# Rust 错误处理
-- Rust 使用 `enum Result<T, E>` 枚举进行可恢复错误处理
-    - `Ok<T>` 变体包含成功时的结果，`Err<E>` 包含错误
+# Rust error handling
+- Rust uses the ```enum Result<T, E>``` enum for recoverable error handling
+    - The ```Ok<T>``` variant contains the result in case of success and ```Err<E>``` contains the error
 ```rust
 fn main() {
     let x = "1234x".parse::<u32>();
     match x {
-        Ok(x) => println!("解析数字 {x}"),
-        Err(e) => println!("解析错误 {e:?}"),
+        Ok(x) => println!("Parsed number {x}"),
+        Err(e) => println!("Parsing error {e:?}"),
     }
     let x  = "1234".parse::<u32>();
-    // 同上，但用有效数字
+    // Same as above, but with valid number
     if let Ok(x) = &x {
-        println!("解析数字 {x}")
+        println!("Parsed number {x}")
     } else if let Err(e) = &x {
-        println!("错误: {e:?}");
+        println!("Error: {e:?}");
     }
 }
 ```
 
-# Rust 错误处理
-- try-操作符 `?` 是 `match` `Ok` / `Err` 模式的便捷简写
-    - 注意方法必须返回 `Result<T, E>` 才能使用 `?`
-    - `Result<T, E>` 的类型可以更改。在下面的示例中，我们返回与 `str::parse()` 返回的相同错误类型（`std::num::ParseIntError`）
+# Rust error handling
+- The try-operator ```?``` is a convenient short hand for the ```match``` ```Ok``` / ```Err``` pattern
+    - Note the method must return ```Result<T, E>``` to enable use of ```?```
+    - The type for ```Result<T, E>``` can be changed. In the example below, we return the same error type (```std::num::ParseIntError```) returned by ```str::parse()``` 
 ```rust
 fn double_string_number(s : &str) -> Result<u32, std::num::ParseIntError> {
-   let x = s.parse::<u32>()?; // 错误时立即返回
+   let x = s.parse::<u32>()?; // Returns immediately in case of an error
    Ok(x*2)
 }
 fn main() {
@@ -350,33 +350,33 @@ fn main() {
 }
 ```
 
-# Rust 错误处理
-- 错误可以映射到其他类型，或映射到默认值（https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_or_default）
+# Rust error handling
+- Errors can be mapped to other types, or to default values (https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap_or_default)
 ```rust
-// 错误时将错误类型更改为 ()
+// Changes the error type to () in case of error
 fn double_string_number(s : &str) -> Result<u32, ()> {
-   let x = s.parse::<u32>().map_err(|_|())?; // 错误时立即返回
+   let x = s.parse::<u32>().map_err(|_|())?; // Returns immediately in case of an error
    Ok(x*2)
 }
 ```
 ```rust
 fn double_string_number(s : &str) -> Result<u32, ()> {
-   let x = s.parse::<u32>().unwrap_or_default(); // 解析错误时默认为 0
+   let x = s.parse::<u32>().unwrap_or_default(); // Defaults to 0 in case of parse error
    Ok(x*2)
 }
 ```
 ```rust
 fn double_optional_number(x : Option<u32>) -> Result<u32, ()> {
-    // ok_or 在下面将 Option<None> 转换为 Result<u32, ()>
-    x.ok_or(()).map(|x|x*2) // .map() 只在 Ok(u32) 上应用
+    // ok_or converts Option<None> to Result<u32, ()> in the below
+    x.ok_or(()).map(|x|x*2) // .map() is applied only on Ok(u32)
 }
 ```
 
-# 练习：错误处理
+# Exercise: error handling
 
-🟡 **中级**
-- 实现一个带有单个 u32 参数的 `log()` 函数。如果参数不是 42，返回错误。成功和错误类型的 `Result<>` 都是 `()`
-- 调用 `log()` 函数，如果 `log()` 返回错误，则以相同的 `Result<>` 类型退出。否则打印一条消息说 log 被成功调用
+🟡 **Intermediate**
+- Implement a ```log()``` function with a single u32 parameter. If the parameter is not 42, return an error. The ```Result<>``` for success and error type is ```()```
+- Invoke ```log()``` function that exits with the same ```Result<>``` type if ```log()``` return an error. Otherwise print a message saying that log was successfully called
 
 ```rust
 fn log(x: u32) -> ?? {
@@ -384,7 +384,7 @@ fn log(x: u32) -> ?? {
 }
 
 fn call_log(x: u32) -> ?? {
-    // 调用 log(x)，如果返回错误则立即退出
+    // Call log(x), then exit immediately if it return an error
     println!("log was successfully called");
 }
 
@@ -394,7 +394,7 @@ fn main() {
 }
 ``` 
 
-<details><summary>解答（点击展开）</summary>
+<details><summary>Solution (click to expand)</summary>
 
 ```rust
 fn log(x: u32) -> Result<(), ()> {
@@ -406,18 +406,19 @@ fn log(x: u32) -> Result<(), ()> {
 }
 
 fn call_log(x: u32) -> Result<(), ()> {
-    log(x)?;  // 如果 log() 返回错误则立即退出
+    log(x)?;  // Exit immediately if log() returns an error
     println!("log was successfully called with {x}");
     Ok(())
 }
 
 fn main() {
-    let _ = call_log(42);  // 打印：log was successfully called with 42
-    let _ = call_log(43);  // 返回 Err(()), 没有打印
+    let _ = call_log(42);  // Prints: log was successfully called with 42
+    let _ = call_log(43);  // Returns Err(()), nothing printed
 }
-// 输出：
+// Output:
 // log was successfully called with 42
 ```
 
 </details>
+
 
