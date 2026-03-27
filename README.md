@@ -57,8 +57,7 @@
 
 ### 在线阅读
 
-访问 GitHub Pages（如已配置）：
-- https://hex623.github.io/rust-training-zh
+📚 **GitHub Pages**: https://hex623.github.io/rust-training-zh
 
 ### 本地阅读
 
